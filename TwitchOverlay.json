@@ -1,0 +1,14 @@
+{
+	"id": "TwitchOverlay",
+	"name": "Twitch Overlay",
+	"display_name": "Twitch Overlay",
+	"author": ["PILIX123"],
+	"description": "A mod that reads the game state to transmit it to Twitch.",
+	"prefix": "TO",
+	"main_file": "main.lua",
+	"priority": -10,
+	"badge_colour": "",
+	"badge_text_colour": "",
+	"version": "0.0.1",
+	"dependencies": [],
+}
