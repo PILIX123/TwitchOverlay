@@ -1,7 +1,7 @@
 TO = {}
 
 SMODS.Atlas({
-	key = "TO",
+	key = "modicon",
 	path = "TwitchOverlay.png",
 	px = 34,
 	py = 34,
@@ -19,11 +19,26 @@ function Game:update_selecting_hand(dt)
 	update_selecting_hadn_ref(self, dt)
 end
 
+local set_edition_ref = Card.set_edition
+function Card:set_edition(edition, immediate, silent)
+	-- This is valid to get when editon changed
+	set_edition_ref(self, edition, immediate, silent)
+end
+
+local test = Card.set_ability
+function Card:set_ability(center, initial, delay_sprites)
+	if center.set == nil and center.name ~= "Default Base" then
+		print("new") -- currently prints both cards and other type
+	end
+	test(self, center, initial, delay_sprites)
+end
+
 local called = false
 
 local update_play_tarot_ref = Game.update_play_tarot
 function Game:update_play_tarot(dt)
 	update_play_tarot_ref(self, dt)
+
 	if not called then
 		tprint(G.hand.cards[1].ability) -- ability.effect for the cars effect
 		called = true
