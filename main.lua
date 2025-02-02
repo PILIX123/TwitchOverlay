@@ -27,7 +27,7 @@ end
 
 local test = Card.set_ability
 function Card:set_ability(center, initial, delay_sprites)
-	if center.set == nil and center.name ~= "Default Base" then
+	if center.set == "Enhanced" and center.name ~= "Default Base" then
 		print("new") -- currently prints both cards and other type
 	end
 	test(self, center, initial, delay_sprites)
@@ -39,10 +39,11 @@ local update_play_tarot_ref = Game.update_play_tarot
 function Game:update_play_tarot(dt)
 	update_play_tarot_ref(self, dt)
 
-	if not called then
+	--[[if not called then
 		tprint(G.hand.cards[1].ability) -- ability.effect for the cars effect
 		called = true
-	end
+	end]]
+	--
 end
 
 local update_shop_ref = Game.update_shop
