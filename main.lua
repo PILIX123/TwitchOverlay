@@ -10,7 +10,6 @@ SMODS.Atlas({
 local update_selecting_hadn_ref = Game.update_selecting_hand
 function Game:update_selecting_hand(dt)
 	if not G.STATE_COMPLETE then
-		sendMessageToConsole("Info", string.format("jokers [%s]", dump(G.GAME.used_jokers)))
 		for i = 1, #G.hand.cards do
 			sendMessageToConsole("Info", nil, string.format("Card [%s]\n", G.hand.cards[i].base.name)) --base.id  = value
 		end
@@ -28,19 +27,17 @@ end
 local set_ability_ref = Card.set_ability
 function Card:set_ability(center, initial, delay_sprites)
 	if center.set == "Enhanced" and center.name ~= "Default Base" then
-		print("new") -- currently prints both cards and other type
+		print("new")
 	end
 	set_ability_ref(self, center, initial, delay_sprites)
 end
 
-local called = false
-
 local update_shop_ref = Game.update_shop
 function Game:update_shop(dt)
+	update_shop_ref(self, dt)
 	if not G.STATE_COMPLETE then
 		G.GAME.dollars = 99999999
 	end
-	update_shop_ref(self, dt)
 end
 
 function tprint(tbl, indent)
@@ -59,21 +56,6 @@ function tprint(tbl, indent)
 		else
 			print(formatting .. v)
 		end
-	end
-end
-
-function dump(o)
-	if type(o) == "table" then
-		local s = "{ "
-		for k, v in pairs(o) do
-			if type(k) ~= "number" then
-				k = '"' .. k .. '"'
-			end
-			s = s .. "[" .. k .. "] = " .. dump(v) .. ","
-		end
-		return s .. "} "
-	else
-		return tostring(o)
 	end
 end
 
