@@ -32,11 +32,39 @@ function Card:set_ability(center, initial, delay_sprites)
 	set_ability_ref(self, center, initial, delay_sprites)
 end
 
+local generate_card_ui_ref = generate_card_ui
+generate_card_ui = function(_c, full_UI_table, specific_vars, card_type, badges, hide_desc, main_start, main_end, card)
+	local return_val =
+		generate_card_ui_ref(_c, full_UI_table, specific_vars, card_type, badges, hide_desc, main_start, main_end, card)
+	for i = 1, #return_val.main do
+		for y = 1, #return_val.main[i] do
+			print(return_val.main[i][y].config.text)
+		end
+	end
+	return return_val
+end
+
+local calculate_context_ref = SMODS.calculate_context
+function SMODS:calculate_context(context, return_table)
+	print(G.shop_jokers.cards[1].label)
+	calculate_context_ref(self, context, return_table)
+end
+
 local update_shop_ref = Game.update_shop
+local shop_test
 function Game:update_shop(dt)
 	update_shop_ref(self, dt)
 	if not G.STATE_COMPLETE then
 		G.GAME.dollars = 99999999
+	end
+
+	setShop()
+end
+
+function setShop()
+	if G.shop_jokers.cards ~= shop_test then
+		shop_test = G.shop_jokers.cards
+		print("gibberish")
 	end
 end
 
