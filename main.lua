@@ -32,6 +32,12 @@ function Card:set_ability(center, initial, delay_sprites)
 	set_ability_ref(self, center, initial, delay_sprites)
 end
 
+--[[
+-- you can call localize from anywhere, you just need the key and set of the card you're trying to localize
+-- you can probably create a local localization object and use that instead, might need to setup your own localization function tho.
+-- the localization function is in functions/misc_functions.lua line 1689
+--]]
+
 local generate_card_ui_ref = generate_card_ui
 generate_card_ui = function(_c, full_UI_table, specific_vars, card_type, badges, hide_desc, main_start, main_end, card)
 	local return_val =
