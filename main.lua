@@ -7,7 +7,7 @@ SMODS.Atlas({
 	py = 34,
 	enable = true,
 })
-local test_func = assert(SMODS.load_file("test.lua", "TwitchOverlay"))()
+local getUIBox = assert(SMODS.load_file("test.lua", "TwitchOverlay"))()
 
 local update_selecting_hadn_ref = Game.update_selecting_hand
 function Game:update_selecting_hand(dt)
@@ -67,38 +67,65 @@ local function getTextFromNode(node)
 	end
 end
 
+local function getDataFromCards(uiBox)
+	local data = {}
+
+	local sideBoxes = {}
+	for i, box in ipairs(uiBox.info) do
+		sideBoxes[i] = {}
+		local currentText = ""
+		sideBoxes[i].name = box.name
+		for _, line in ipairs(box) do
+			for _, node in ipairs(line) do
+				currentText = currentText .. getTextFromNode(node)
+			end
+			currentText = currentText .. "\n"
+		end
+		sideBoxes[i].currentText = currentText
+	end
+	data.sideBoxes = sideBoxes
+	local description = ""
+	for _, line in ipairs(uiBox.main) do
+		for _, part in ipairs(line) do
+			description = description .. getTextFromNode(part)
+		end
+		description = description .. "\n"
+	end
+	data.description = description
+	local name = ""
+	for _, line in ipairs(uiBox.name) do
+		name = name .. getTextFromNode(line) .. "\n"
+	end
+	data.name = name
+	return data
+end
+
+local function jsonify(table)
+	local new = {}
+	for k, v in pairs(table) do
+		if type(k) == "number" then
+			k = tostring(k)
+		end
+
+		if type(v) ~= "table" then
+			new[k] = v
+		else
+			new[k] = jsonify(v)
+		end
+	end
+	return new
+end
+
 local calculate_context_ref = SMODS.calculate_context
 function SMODS:calculate_context(context, return_table)
 	if G.shop_jokers ~= nil and G.shop_jokers.cards ~= nil then
-		local test = test_func(G.shop_jokers.cards[1]:generate_UIBox_ability_table())
-		print(G.shop_jokers.cards[1].config.center.rarity)
-		print(JSON.encode(test_func(G.shop_jokers.cards[1]:generate_UIBox_ability_table(), true)))
-		local side_box = {}
-		for i, box in ipairs(test.info) do
-			local currentText = ""
-			print(box.name)
-			for _, line in ipairs(box) do
-				for _, node in ipairs(line) do
-					currentText = currentText .. getTextFromNode(node)
-				end
-				currentText = currentText .. "\n"
-			end
-			side_box[i] = currentText
+		local currentlyAvailableJokers = {}
+		for i, card in ipairs(G.shop_jokers.cards) do
+			local uiBox = getUIBox(card:generate_UIBox_ability_table())
+			local currentCardData = getDataFromCards(uiBox)
+			currentlyAvailableJokers[i] = currentCardData
 		end
-		print(side_box)
-		local full_desc = ""
-		for _, line in ipairs(test.main) do
-			for _, part in ipairs(line) do
-				if part.n == G.UIT.T then
-					full_desc = full_desc .. part.config.text
-				end
-				if part.n == G.UIT.O then
-					for _, v in pairs(part.config.object.config.string) do
-						print(v)
-					end
-				end
-			end
-		end
+		print(JSON.encode(jsonify(currentlyAvailableJokers)))
 	end
 	calculate_context_ref(self, context, return_table)
 end
