@@ -130,37 +130,26 @@ function SMODS:calculate_context(context, return_table)
 	calculate_context_ref(self, context, return_table)
 end
 
-function getFullDescription(parsed, loc_vars)
-	local full = ""
-	for _, lines in ipairs(parsed) do
-		full = full .. "\n"
-		for _, part in ipairs(lines) do
-			for _, subpart in ipairs(part.strings) do
-				full = full
-					.. (
-						type(subpart) == "string" and subpart
-						or loc_vars ~= nil and loc_vars[tonumber(subpart[1])]
-						or "OHNO"
-					)
-			end
-		end
-	end
-	return full
-end
-
 local update_shop_ref = Game.update_shop
-local shop_test
 function Game:update_shop(dt)
 	if not G.STATE_COMPLETE then
 		G.GAME.dollars = 99999999
 		if G.load_shop_jokers ~= nil then
 			if G.load_shop_jokers.cards ~= nil then
-				local key = G.load_shop_jokers.cards[1].save_fields.center
-				local set = G.load_shop_jokers.cards[1].ability.set
+				print(G.load_shop_jokers.cards[1])
+				if G.load_shop_jokers.cards[1].generate_UIBox_ability_table ~= nil then
+					print(G.load_shop_jokers.cards[1])
+				end
+				local currentlyAvailableJokers = {}
+				for i, cards in ipairs(G.load_shop_jokers.cards) do
+					--local uiBox = getUIBox(cards:generate_UIBox_ability_table())
+					--local currentCardData = getDataFromCards(uiBox)
+					--currentlyAvailableJokers[i] = currentCardData
+				end
+				print(JSON.encode(jsonify(currentlyAvailableJokers)))
 			end
 		end
 	end
-
 	update_shop_ref(self, dt)
 end
 function tprint(tbl, indent)
