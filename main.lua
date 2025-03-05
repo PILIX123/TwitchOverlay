@@ -6,6 +6,7 @@ SMODS.Atlas({
 	px = 34,
 	py = 34,
 	enable = true,
+	_disable = false,
 })
 local getUIBox = assert(SMODS.load_file("test.lua", "TwitchOverlay"))()
 
@@ -40,20 +41,21 @@ end
 -- the localization function is in functions/misc_functions.lua line 1689
 --]]
 
-local generate_card_ui_ref = generate_card_ui
-generate_card_ui = function(_c, full_UI_table, specific_vars, card_type, badges, hide_desc, main_start, main_end, card)
-	local return_val =
-		generate_card_ui_ref(_c, full_UI_table, specific_vars, card_type, badges, hide_desc, main_start, main_end, card)
-	return return_val
-end
-
 local function getTextFromNode(node)
 	if node.n == G.UIT.T then
 		return node.config.text
 	elseif node.n == G.UIT.O then
 		local text = ""
-		for _, v in ipairs(node.config.object.config.string) do
-			text = text .. v
+		if node.config.object.config.random_element then
+			if type(node.config.object.config.string[1]) == "string" then
+				text = text
+			else
+				text = text .. " (random value between 0 and 23) mult"
+			end
+		else
+			for _, v in ipairs(node.config.object.config.string) do
+				text = text .. v
+			end
 		end
 		return text
 	elseif node.n == G.UIT.C then
@@ -97,6 +99,9 @@ local function getDataFromCards(uiBox)
 		name = name .. getTextFromNode(line) .. "\n"
 	end
 	data.name = name
+	if name == "Misprint\n" then
+		print(uiBox.main[1][2].config.object.config)
+	end
 	return data
 end
 
@@ -116,61 +121,108 @@ local function jsonify(table)
 	return new
 end
 
+local function getAllCardContents(table)
+	local currentlyAvailableJokers = {}
+
+	for i, card in ipairs(table) do
+		local uiBox = getUIBox(card:generate_UIBox_ability_table())
+		local currentCardData = getDataFromCards(uiBox)
+		currentlyAvailableJokers[i] = currentCardData
+	end
+	return currentlyAvailableJokers
+end
+
 local calculate_context_ref = SMODS.calculate_context
 function SMODS:calculate_context(context, return_table)
 	if G.shop_jokers ~= nil and G.shop_jokers.cards ~= nil then
-		local currentlyAvailableJokers = {}
-		for i, card in ipairs(G.shop_jokers.cards) do
-			local uiBox = getUIBox(card:generate_UIBox_ability_table())
-			local currentCardData = getDataFromCards(uiBox)
-			currentlyAvailableJokers[i] = currentCardData
-		end
+		local currentlyAvailableJokers = getAllCardContents(G.shop_jokers.cards)
 		print(JSON.encode(jsonify(currentlyAvailableJokers)))
 	end
+	if G.shop_vouchers ~= nil and G.shop_vouchers.cards ~= nil then
+		local currentlyAvailabkleVouchers = getAllCardContents(G.shop_vouchers.cards)
+		print(JSON.encode(jsonify(currentlyAvailabkleVouchers)))
+	end
+	if G.shop_booster ~= nil and G.shop_booster.cards ~= nil then
+		local currentlyAvailableBoosters = getAllCardContents(G.shop_booster.cards)
+		print(JSON.encode(jsonify(currentlyAvailableBoosters)))
+	end
 	calculate_context_ref(self, context, return_table)
+end
+
+local function getDataFromSaveState(table)
+	local availableCards = {}
+
+	if table ~= nil then
+		for i, cards in ipairs(table.cards) do
+			local card = Card(0, 0, G.CARD_W, G.CARD_H, G.P_CENTERS.j_joker, G.P_CENTERS.c_base)
+			card:load(cards)
+			local uiBox = getUIBox(card:generate_UIBox_ability_table())
+			local currentCard = getDataFromCards(uiBox)
+			availableCards[i] = currentCard
+			card:remove()
+		end
+	end
+	return availableCards
+end
+
+local start_run_ref = Game.start_run
+function Game:start_run(args)
+	local availableCards = getDataFromSaveState(args.savetext.cardAreas.shop_jokers)
+	local availableVouchers = getDataFromSaveState(args.savetext.cardAreas.shop_vouchers)
+	local availableBooster = getDataFromSaveState(args.savetext.cardAreas.shop_booster)
+	print(JSON.encode(jsonify(availableCards)))
+	print(JSON.encode(jsonify(availableVouchers)))
+	print(JSON.encode(jsonify(availableBooster)))
+	start_run_ref(self, args)
 end
 
 local update_shop_ref = Game.update_shop
 function Game:update_shop(dt)
 	if not G.STATE_COMPLETE then
 		G.GAME.dollars = 99999999
-		if G.load_shop_jokers ~= nil then
-			if G.load_shop_jokers.cards ~= nil then
-				print(G.load_shop_jokers.cards[1])
-				if G.load_shop_jokers.cards[1].generate_UIBox_ability_table ~= nil then
-					print(G.load_shop_jokers.cards[1])
-				end
-				local currentlyAvailableJokers = {}
-				for i, cards in ipairs(G.load_shop_jokers.cards) do
-					--local uiBox = getUIBox(cards:generate_UIBox_ability_table())
-					--local currentCardData = getDataFromCards(uiBox)
-					--currentlyAvailableJokers[i] = currentCardData
-				end
+		if
+			G.load_shop_vouchers ~= nil
+			and G.load_shop_vouchers.cards ~= nil
+			and G.load_shop_vouchers.cards[1].generate_UIBox_ability_table ~= nil
+		then
+			local currentlyAvailabkleVouchers = getAllCardContents(G.load_shop_vouchers.cards)
+			print(JSON.encode(jsonify(currentlyAvailabkleVouchers)))
+		else
+			if
+				G.shop_vouchers ~= nil
+				and G.shop_vouchers.cards ~= nil
+				and G.shop_vouchers.cards[1].generate_UIBox_ability_table ~= nil
+			then
+				local currentlyAvailableVouchers = getAllCardContents(G.shop_vouchers.cards)
+				print(JSON.encode(jsonify(currentlyAvailableVouchers)))
+			end
+		end
+		if
+			G.load_shop_jokers ~= nil
+			and G.load_shop_jokers.cards ~= nil
+			and G.load_shop_jokers.cards[1].generate_UIBox_ability_table ~= nil
+		then
+			local currentlyAvailableJokers = getAllCardContents(G.shop_jokers.cards)
+			print(JSON.encode(jsonify(currentlyAvailableJokers)))
+		else
+			if
+				G.shop_jokers ~= nil
+				and G.shop_jokers.cards ~= nil
+				and G.shop_jokers.cards[1].generate_UIBox_ability_table ~= nil
+			then
+				local currentlyAvailableJokers = getAllCardContents(G.shop_jokers.cards)
 				print(JSON.encode(jsonify(currentlyAvailableJokers)))
 			end
 		end
-	end
-	update_shop_ref(self, dt)
-end
-function tprint(tbl, indent)
-	if not indent then
-		indent = 0
-	end
-	for k, v in pairs(tbl) do
-		formatting = string.rep("  ", indent) .. k .. ": "
-		if type(v) == "table" then
-			print(formatting)
-			tprint(v, indent + 1)
-		elseif type(v) == "boolean" then
-			print(formatting .. tostring(v))
-		elseif type(v) == "userdata" then
-			print(formatting .. tostring(v))
-		else
-			print(formatting .. v)
+		if
+			G.load_shop_booster ~= nil
+			and G.load_shop_booster.cards ~= nil
+			and G.load_shop_booster.cards[1] ~= nil
+			and G.load_shop_booster.cards[1].generate_UIBox_ability_table ~= nil
+		then
+			local currentlyAvailableBoosters = getAllCardContents(G.load_shop_booster.cards)
+			print(JSON.encode(jsonify(currentlyAvailableBoosters)))
 		end
+		update_shop_ref(self, dt)
 	end
-end
-
-function starts_with(str, start)
-	return str:sub(1, #start) == start
 end
