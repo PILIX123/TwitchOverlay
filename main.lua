@@ -132,21 +132,124 @@ local function getAllCardContents(table)
 	return currentlyAvailableJokers
 end
 
+local gotBaffoonContent = false
+local update_baffoon_pack_ref = Game.update_buffoon_pack
+function Game:update_buffoon_pack(dt)
+	if
+		G.pack_cards ~= nil
+		and G.pack_cards.cards ~= nil
+		and G.pack_cards.cards[1] ~= nil
+		and gotBaffoonContent == false
+	then
+		gotBaffoonContent = true
+		local boosterContent = getAllCardContents(G.pack_cards.cards)
+		print(JSON.encode(jsonify(boosterContent)))
+	end
+
+	return update_baffoon_pack_ref(self, dt)
+end
+
+local gotCelestialContent = false
+local update_celestial_pack_ref = Game.update_celestial_pack
+function Game:update_celestial_pack(dt)
+	if
+		G.pack_cards ~= nil
+		and G.pack_cards.cards ~= nil
+		and G.pack_cards.cards[1] ~= nil
+		and gotCelestialContent == false
+	then
+		gotCelestialContent = true
+		local boosterContent = getAllCardContents(G.pack_cards.cards)
+		print(JSON.encode(jsonify(boosterContent)))
+	end
+
+	return update_celestial_pack_ref(self, dt)
+end
+
+local gotTarotContent = false
+local update_arcana_pack_ref = Game.update_arcana_pack
+function Game:update_celestial_pack(dt)
+	if
+		G.pack_cards ~= nil
+		and G.pack_cards.cards ~= nil
+		and G.pack_cards.cards[1] ~= nil
+		and gotTarotContent == false
+	then
+		gotTarotContent = true
+		local boosterContent = getAllCardContents(G.pack_cards.cards)
+		print(JSON.encode(jsonify(boosterContent)))
+	end
+
+	return update_arcana_pack_ref(self, dt)
+end
+
+local gotStandardContent = false
+local update_standard_pack_ref = Game.update_standard_pack
+function Game:update_celestial_pack(dt)
+	if
+		G.pack_cards ~= nil
+		and G.pack_cards.cards ~= nil
+		and G.pack_cards.cards[1] ~= nil
+		and gotStandardContent == false
+	then
+		gotStandardContent = true
+		local boosterContent = getAllCardContents(G.pack_cards.cards)
+		print(JSON.encode(jsonify(boosterContent)))
+	end
+
+	return update_standard_pack_ref(self, dt)
+end
+
+local gotSpectralContent = false
+local update_spectral_pack_ref = Game.update_spectral_pack
+function Game:update_celestial_pack(dt)
+	if
+		G.pack_cards ~= nil
+		and G.pack_cards.cards ~= nil
+		and G.pack_cards.cards[1] ~= nil
+		and gotSpectralContent == false
+	then
+		gotSpectralContent = true
+		local boosterContent = getAllCardContents(G.pack_cards.cards)
+		print(JSON.encode(jsonify(boosterContent)))
+	end
+
+	return update_spectral_pack_ref(self, dt)
+end
+
+local gotModdedContent = false
+local update_pack_ref = SMODS.Booster.update_pack
+function SMODS.Booster.update_pack(dt)
+	if
+		G.pack_cards ~= nil
+		and G.pack_cards.cards ~= nil
+		and G.pack_cards.cards[1] ~= nil
+		and gotModdedContent == false
+	then
+		gotModdedContent = true
+		local boosterContent = getAllCardContents(G.pack_cards.cards)
+		print(JSON.encode(jsonify(boosterContent)))
+	end
+	return update_pack_ref(dt)
+end
+
 local calculate_context_ref = SMODS.calculate_context
-function SMODS:calculate_context(context, return_table)
-	if G.shop_jokers ~= nil and G.shop_jokers.cards ~= nil then
-		local currentlyAvailableJokers = getAllCardContents(G.shop_jokers.cards)
-		print(JSON.encode(jsonify(currentlyAvailableJokers)))
+function SMODS.calculate_context(context, return_table)
+	if context.reroll_shop then
+		if G.shop_jokers ~= nil and G.shop_jokers.cards ~= nil then
+			local currentlyAvailableJokers = getAllCardContents(G.shop_jokers.cards)
+			print(JSON.encode(jsonify(currentlyAvailableJokers)))
+		end
+		if G.shop_vouchers ~= nil and G.shop_vouchers.cards ~= nil then
+			local currentlyAvailabkleVouchers = getAllCardContents(G.shop_vouchers.cards)
+			print(JSON.encode(jsonify(currentlyAvailabkleVouchers)))
+		end
+		if G.shop_booster ~= nil and G.shop_booster.cards ~= nil then
+			local currentlyAvailableBoosters = getAllCardContents(G.shop_booster.cards)
+			print(JSON.encode(jsonify(currentlyAvailableBoosters)))
+		end
 	end
-	if G.shop_vouchers ~= nil and G.shop_vouchers.cards ~= nil then
-		local currentlyAvailabkleVouchers = getAllCardContents(G.shop_vouchers.cards)
-		print(JSON.encode(jsonify(currentlyAvailabkleVouchers)))
-	end
-	if G.shop_booster ~= nil and G.shop_booster.cards ~= nil then
-		local currentlyAvailableBoosters = getAllCardContents(G.shop_booster.cards)
-		print(JSON.encode(jsonify(currentlyAvailableBoosters)))
-	end
-	calculate_context_ref(self, context, return_table)
+	return calculate_context_ref(context, return_table)
 end
 
 local function getDataFromSaveState(table)
@@ -167,12 +270,20 @@ end
 
 local start_run_ref = Game.start_run
 function Game:start_run(args)
-	local availableCards = getDataFromSaveState(args.savetext.cardAreas.shop_jokers)
-	local availableVouchers = getDataFromSaveState(args.savetext.cardAreas.shop_vouchers)
-	local availableBooster = getDataFromSaveState(args.savetext.cardAreas.shop_booster)
-	print(JSON.encode(jsonify(availableCards)))
-	print(JSON.encode(jsonify(availableVouchers)))
-	print(JSON.encode(jsonify(availableBooster)))
+	if
+		args.savetext ~= nil
+		and args.savetext.cardAreas ~= nil
+		and args.savetext.cardAreas.shop_booster ~= nil
+		and args.savetext.cardAreas.shop_jokers ~= nil
+		and args.savetext.cardAreas.shop_vouchers ~= nil
+	then
+		local availableCards = getDataFromSaveState(args.savetext.cardAreas.shop_jokers)
+		local availableVouchers = getDataFromSaveState(args.savetext.cardAreas.shop_vouchers)
+		local availableBooster = getDataFromSaveState(args.savetext.cardAreas.shop_booster)
+		print(JSON.encode(jsonify(availableCards)))
+		print(JSON.encode(jsonify(availableVouchers)))
+		print(JSON.encode(jsonify(availableBooster)))
+	end
 	start_run_ref(self, args)
 end
 
