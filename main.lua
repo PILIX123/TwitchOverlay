@@ -333,6 +333,15 @@ function Game:update_shop(dt)
 		then
 			local currentlyAvailableBoosters = getAllCardContents(G.load_shop_booster.cards)
 			print(JSON.encode(jsonify(currentlyAvailableBoosters)))
+		else
+			if
+				G.shop_booster ~= nil
+				and G.shop_booster.cards ~= nil
+				and G.shop_booster.cards[1].generate_UIBox_ability_table ~= nil
+			then
+				local currentlyAvailableJokers = getAllCardContents(G.shop_booster.cards)
+				print(JSON.encode(jsonify(currentlyAvailableJokers)))
+			end
 		end
 		update_shop_ref(self, dt)
 	end
