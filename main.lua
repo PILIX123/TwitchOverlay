@@ -27,14 +27,6 @@ function Card:set_edition(edition, immediate, silent)
 	set_edition_ref(self, edition, immediate, silent)
 end
 
-local set_ability_ref = Card.set_ability
-function Card:set_ability(center, initial, delay_sprites)
-	if center.set == "Enhanced" and center.name ~= "Default Base" then
-		print("new")
-	end
-	set_ability_ref(self, center, initial, delay_sprites)
-end
-
 --[[
 -- you can call localize from anywhere, you just need the key and set of the card you're trying to localize
 -- you can probably create a local localization object and use that instead, might need to setup your own localization function tho.
@@ -95,8 +87,12 @@ local function getDataFromCards(uiBox)
 	end
 	data.description = description
 	local name = ""
-	for _, line in ipairs(uiBox.name) do
-		name = name .. getTextFromNode(line) .. "\n"
+	if type(uiBox.name) == "table" then
+		for _, line in ipairs(uiBox.name) do
+			name = name .. getTextFromNode(line) .. "\n"
+		end
+	else
+		name = "Stone card"
 	end
 	data.name = name
 	if name == "Misprint\n" then
@@ -130,6 +126,16 @@ local function getAllCardContents(table)
 		currentlyAvailableJokers[i] = currentCardData
 	end
 	return currentlyAvailableJokers
+end
+
+local set_ability_ref = Card.set_ability
+function Card:set_ability(center, initial, delay_sprites)
+	set_ability_ref(self, center, initial, delay_sprites)
+	if initial == nil and center.set == "Enhanced" then
+		local uiBox = getUIBox(self:generate_UIBox_ability_table())
+		local currentCard = getDataFromCards(uiBox)
+		print(JSON.encode(jsonify(currentCard)))
+	end
 end
 
 local gotBaffoonContent = false
@@ -339,8 +345,8 @@ function Game:update_shop(dt)
 				and G.shop_booster.cards ~= nil
 				and G.shop_booster.cards[1].generate_UIBox_ability_table ~= nil
 			then
-				local currentlyAvailableJokers = getAllCardContents(G.shop_booster.cards)
-				print(JSON.encode(jsonify(currentlyAvailableJokers)))
+				local currentlyAvailableBoosters = getAllCardContents(G.shop_booster.cards)
+				print(JSON.encode(jsonify(currentlyAvailableBoosters)))
 			end
 		end
 		update_shop_ref(self, dt)
