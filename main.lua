@@ -120,11 +120,6 @@ local remove_func = function(self, card, discarded_only)
 	print(JSON.encode(jsonify(getAllCardContents(self.cards))))
 end
 
-local update_ref = Game.update
-function Game:update(dt)
-	update_ref(self, dt)
-end
-
 local set_edition_ref = Card.set_edition
 function Card:set_edition(edition, immediate, silent)
 	set_edition_ref(self, edition, immediate, silent)
@@ -139,20 +134,6 @@ local newJokerEmplaceSet = false
 local newTarotEmplaceSet = false
 local update_selecting_hadn_ref = Game.update_selecting_hand
 function Game:update_selecting_hand(dt)
-	if G.jokers ~= nil and newJokerEmplaceSet == false then
-		emplace_ref = G.jokers.emplace
-		remove_ref = G.jokers.remove_card
-		G.jokers.emplace = emplace_func
-		G.jokers.remove_card = remove_func
-		newJokerEmplaceSet = true
-	end
-	if G.consumeables ~= nil and newTarotEmplaceSet == false then
-		emplace_ref = G.consumeables.emplace
-		remove_ref = G.consumeables.remove_card
-		G.consumeables.emplace = emplace_func
-		G.consumeables.remove_card = remove_func
-		newTarotEmplaceSet = true
-	end
 	if not G.STATE_COMPLETE then
 		local currentHand = getAllCardContents(G.hand.cards)
 		print(JSON.encode(jsonify(currentHand)))
@@ -315,6 +296,10 @@ end
 
 -- probably need to set emplace for jokers and consumeables here
 
+local newShopJokerEmplaceSet = false
+local newShopVouchersEmplaceSet = false
+local newShopBoosterEmplaceSet = false
+local loadShopJokersEmplaceSet = false
 local start_run_ref = Game.start_run
 function Game:start_run(args)
 	if
@@ -332,14 +317,27 @@ function Game:start_run(args)
 		print(JSON.encode(jsonify(availableBooster)))
 	end
 	start_run_ref(self, args)
+
+	if G.jokers ~= nil and newJokerEmplaceSet == false then
+		emplace_ref = G.jokers.emplace
+		remove_ref = G.jokers.remove_card
+		G.jokers.emplace = emplace_func
+		G.jokers.remove_card = remove_func
+		newJokerEmplaceSet = true
+	end
+	if G.consumeables ~= nil and newTarotEmplaceSet == false then
+		emplace_ref = G.consumeables.emplace
+		remove_ref = G.consumeables.remove_card
+		G.consumeables.emplace = emplace_func
+		G.consumeables.remove_card = remove_func
+		newTarotEmplaceSet = true
+	end
 end
 
-local newShopJokerEmplaceSet = false
-local newShopVouchersEmplaceSet = false
-local newShopBoosterEmplaceSet = false
-local loadShopJokersEmplaceSet = false
-local update_shop_ref = Game.update_shop
-function Game:update_shop(dt)
+local vouchersSent = false
+local boosterSent = false
+local update_ref = Game.update
+function Game:update(dt)
 	if G.shop_jokers ~= nil and newShopJokerEmplaceSet == false then
 		emplace_ref = G.shop_jokers.emplace
 		G.shop_jokers.emplace = emplace_func
@@ -355,11 +353,43 @@ function Game:update_shop(dt)
 		G.shop_booster.emplace = emplace_func
 		newShopBoosterEmplaceSet = true
 	end
+	if (not (G.STATE == G.STATES.SHOP)) and vouchersSent then
+		vouchersSent = false
+	end
+	if (not (G.STATE == G.STATES.SHOP)) and boosterSent then
+		boosterSent = false
+	end
+	update_ref(self, dt)
+end
+
+local update_shop_ref = Game.update_shop
+function Game:update_shop(dt)
 	-- if G.load_shop_jokers ~= nil and loadShopJokersEmplaceSet == false then
 	-- 	emplace_ref = G.load_shop_jokers.emplace
 	-- 	G.load_shop_jokers.emplace = emplace_func
 	-- 	loadShopJokersEmplaceSet = true
 	-- end
+	if
+		G.shop_vouchers ~= nil
+		and G.shop_vouchers.cards ~= nil
+		and G.shop_vouchers.cards[1] ~= nil
+		and not vouchersSent
+	then
+		local currentlyAvailableVouchers = getAllCardContents(G.shop_vouchers.cards)
+		print(JSON.encode(jsonify(currentlyAvailableVouchers)))
+		vouchersSent = true
+	end
+
+	if
+		G.shop_vouchers ~= nil
+		and G.shop_vouchers.cards ~= nil
+		and G.shop_vouchers.cards[1] ~= nil
+		and not boosterSent
+	then
+		local currentlyAvailableBoosters = getAllCardContents(G.shop_booster.cards)
+		print(JSON.encode(jsonify(currentlyAvailableBoosters)))
+		boosterSent = true
+	end
 
 	if not G.STATE_COMPLETE then
 		G.GAME.dollars = 99999999
