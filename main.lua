@@ -10,23 +10,6 @@ SMODS.Atlas({
 })
 local getUIBox = assert(SMODS.load_file("test.lua", "TwitchOverlay"))()
 
-local update_selecting_hadn_ref = Game.update_selecting_hand
-function Game:update_selecting_hand(dt)
-	if not G.STATE_COMPLETE then
-		for i = 1, #G.hand.cards do
-			sendMessageToConsole("Info", nil, string.format("Card [%s]\n", G.hand.cards[i].base.name)) --base.id  = value
-		end
-		tprint(G.hand.cards[1].base)
-	end
-	update_selecting_hadn_ref(self, dt)
-end
-
-local set_edition_ref = Card.set_edition
-function Card:set_edition(edition, immediate, silent)
-	-- This is valid to get when editon changed
-	set_edition_ref(self, edition, immediate, silent)
-end
-
 --[[
 -- you can call localize from anywhere, you just need the key and set of the card you're trying to localize
 -- you can probably create a local localization object and use that instead, might need to setup your own localization function tho.
@@ -95,9 +78,6 @@ local function getDataFromCards(uiBox)
 		name = "Stone card"
 	end
 	data.name = name
-	if name == "Misprint\n" then
-		print(uiBox.main[1][2].config.object.config)
-	end
 	return data
 end
 
@@ -126,6 +106,58 @@ local function getAllCardContents(table)
 		currentlyAvailableJokers[i] = currentCardData
 	end
 	return currentlyAvailableJokers
+end
+
+local emplace_ref = nil
+local emplace_func = function(self, card, location, stay_flipped)
+	emplace_ref(self, card, location, stay_flipped)
+	print(JSON.encode(jsonify(getAllCardContents(self.cards))))
+end
+
+local remove_ref = nil
+local remove_func = function(self, card, discarded_only)
+	remove_ref(self, card, discarded_only)
+	print(JSON.encode(jsonify(getAllCardContents(self.cards))))
+end
+
+local update_ref = Game.update
+function Game:update(dt)
+	update_ref(self, dt)
+end
+
+local set_edition_ref = Card.set_edition
+function Card:set_edition(edition, immediate, silent)
+	set_edition_ref(self, edition, immediate, silent)
+	if edition ~= nil and immediate ~= nil then
+		local uiBox = getUIBox(self:generate_UIBox_ability_table())
+		local currentCaed = getDataFromCards(uiBox)
+		print(JSON.encode(jsonify(currentCaed)))
+	end
+end
+
+local newJokerEmplaceSet = false
+local newTarotEmplaceSet = false
+local update_selecting_hadn_ref = Game.update_selecting_hand
+function Game:update_selecting_hand(dt)
+	if G.jokers ~= nil and newJokerEmplaceSet == false then
+		emplace_ref = G.jokers.emplace
+		remove_ref = G.jokers.remove_card
+		G.jokers.emplace = emplace_func
+		G.jokers.remove_card = remove_func
+		newJokerEmplaceSet = true
+	end
+	if G.consumeables ~= nil and newTarotEmplaceSet == false then
+		emplace_ref = G.consumeables.emplace
+		remove_ref = G.consumeables.remove_card
+		G.consumeables.emplace = emplace_func
+		G.consumeables.remove_card = remove_func
+		newTarotEmplaceSet = true
+	end
+	if not G.STATE_COMPLETE then
+		local currentHand = getAllCardContents(G.hand.cards)
+		print(JSON.encode(jsonify(currentHand)))
+	end
+	update_selecting_hadn_ref(self, dt)
 end
 
 local set_ability_ref = Card.set_ability
@@ -239,24 +271,31 @@ function SMODS.Booster.update_pack(dt)
 	return update_pack_ref(dt)
 end
 
-local calculate_context_ref = SMODS.calculate_context
-function SMODS.calculate_context(context, return_table)
-	if context.reroll_shop then
-		if G.shop_jokers ~= nil and G.shop_jokers.cards ~= nil then
-			local currentlyAvailableJokers = getAllCardContents(G.shop_jokers.cards)
-			print(JSON.encode(jsonify(currentlyAvailableJokers)))
-		end
-		if G.shop_vouchers ~= nil and G.shop_vouchers.cards ~= nil then
-			local currentlyAvailabkleVouchers = getAllCardContents(G.shop_vouchers.cards)
-			print(JSON.encode(jsonify(currentlyAvailabkleVouchers)))
-		end
-		if G.shop_booster ~= nil and G.shop_booster.cards ~= nil then
-			local currentlyAvailableBoosters = getAllCardContents(G.shop_booster.cards)
-			print(JSON.encode(jsonify(currentlyAvailableBoosters)))
-		end
-	end
-	return calculate_context_ref(context, return_table)
-end
+-- local calculate_context_ref = SMODS.calculate_context
+-- function SMODS.calculate_context(context, return_table)
+-- 	if context.reroll_shop then
+-- 		-- if G.shop_jokers ~= nil and G.shop_jokers.cards ~= nil then
+-- 		-- 	local currentlyAvailableJokers = getAllCardContents(G.shop_jokers.cards)
+-- 		-- 	print(JSON.encode(jsonify(currentlyAvailableJokers)))
+-- 		-- end
+-- 		if G.shop_vouchers ~= nil and G.shop_vouchers.cards ~= nil then
+-- 			local currentlyAvailabkleVouchers = getAllCardContents(G.shop_vouchers.cards)
+-- 			print(JSON.encode(jsonify(currentlyAvailabkleVouchers)))
+-- 		end
+-- 		if G.shop_booster ~= nil and G.shop_booster.cards ~= nil then
+-- 			local currentlyAvailableBoosters = getAllCardContents(G.shop_booster.cards)
+-- 			print(JSON.encode(jsonify(currentlyAvailableBoosters)))
+-- 		end
+-- 	end
+-- 	return calculate_context_ref(context, return_table)
+-- end
+--
+--
+--[[
+-- I just need to figure out when each event needs to be set.
+-- right now when coming back from a blind emplace do not trigger
+-- also when loading from save is not set for jokers and consumeables
+--]]
 
 local function getDataFromSaveState(table)
 	local availableCards = {}
@@ -273,6 +312,8 @@ local function getDataFromSaveState(table)
 	end
 	return availableCards
 end
+
+-- probably need to set emplace for jokers and consumeables here
 
 local start_run_ref = Game.start_run
 function Game:start_run(args)
@@ -293,8 +334,33 @@ function Game:start_run(args)
 	start_run_ref(self, args)
 end
 
+local newShopJokerEmplaceSet = false
+local newShopVouchersEmplaceSet = false
+local newShopBoosterEmplaceSet = false
+local loadShopJokersEmplaceSet = false
 local update_shop_ref = Game.update_shop
 function Game:update_shop(dt)
+	if G.shop_jokers ~= nil and newShopJokerEmplaceSet == false then
+		emplace_ref = G.shop_jokers.emplace
+		G.shop_jokers.emplace = emplace_func
+		newShopJokerEmplaceSet = true
+	end
+	if G.shop_vouchers ~= nil and newShopVouchersEmplaceSet == false then
+		emplace_ref = G.shop_vouchers.emplace
+		G.shop_vouchers.emplace = emplace_func
+		newShopVouchersEmplaceSet = true
+	end
+	if G.shop_booster ~= nil and newShopBoosterEmplaceSet == false then
+		emplace_ref = G.shop_booster.emplace
+		G.shop_booster.emplace = emplace_func
+		newShopBoosterEmplaceSet = true
+	end
+	-- if G.load_shop_jokers ~= nil and loadShopJokersEmplaceSet == false then
+	-- 	emplace_ref = G.load_shop_jokers.emplace
+	-- 	G.load_shop_jokers.emplace = emplace_func
+	-- 	loadShopJokersEmplaceSet = true
+	-- end
+
 	if not G.STATE_COMPLETE then
 		G.GAME.dollars = 99999999
 		if
@@ -349,6 +415,6 @@ function Game:update_shop(dt)
 				print(JSON.encode(jsonify(currentlyAvailableBoosters)))
 			end
 		end
-		update_shop_ref(self, dt)
 	end
+	update_shop_ref(self, dt)
 end
