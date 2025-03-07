@@ -343,32 +343,29 @@ function Game:update(dt)
 		G.shop_jokers.emplace = emplace_func
 		newShopJokerEmplaceSet = true
 	end
-	if G.shop_vouchers ~= nil and newShopVouchersEmplaceSet == false then
-		emplace_ref = G.shop_vouchers.emplace
-		G.shop_vouchers.emplace = emplace_func
-		newShopVouchersEmplaceSet = true
-	end
-	if G.shop_booster ~= nil and newShopBoosterEmplaceSet == false then
-		emplace_ref = G.shop_booster.emplace
-		G.shop_booster.emplace = emplace_func
-		newShopBoosterEmplaceSet = true
-	end
-	if (not (G.STATE == G.STATES.SHOP)) and vouchersSent then
-		vouchersSent = false
-	end
-	if (not (G.STATE == G.STATES.SHOP)) and boosterSent then
-		boosterSent = false
+	if not (G.STATE == G.STATES.SHOP) then
+		if vouchersSent then
+			vouchersSent = false
+		end
+		if boosterSent then
+			boosterSent = false
+		end
+		if newShopJokerEmplaceSet then
+			newShopJokerEmplaceSet = false
+		end
 	end
 	update_ref(self, dt)
 end
 
 local update_shop_ref = Game.update_shop
 function Game:update_shop(dt)
-	-- if G.load_shop_jokers ~= nil and loadShopJokersEmplaceSet == false then
-	-- 	emplace_ref = G.load_shop_jokers.emplace
-	-- 	G.load_shop_jokers.emplace = emplace_func
-	-- 	loadShopJokersEmplaceSet = true
-	-- end
+	if G.shop_jokers ~= nil then
+		if G.shop_jokers.emplace ~= nil and newShopJokerEmplaceSet == false then
+			emplace_ref = G.shop_jokers.emplace
+			G.shop_jokers.emplace = emplace_func
+			newShopJokerEmplaceSet = true
+		end
+	end
 	if
 		G.shop_vouchers ~= nil
 		and G.shop_vouchers.cards ~= nil
